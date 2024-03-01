@@ -4,6 +4,7 @@ import pandas as pd
 from PIL import Image
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.decomposition import PCA
+from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('TkAgg')  # Use a specific backend that should work across different environments
@@ -18,7 +19,8 @@ def read_data_from_folder(directory,plot_class_dist = False):
     y = []
 
     # Define the labels
-    lables = ['Mild_Demented', 'Non_Demented','Moderate_Demented', 'Very_Mild_Demented']
+    lables = ['Mild_Demented', 'Non_Demented', 'Very_Mild_Demented']
+    #lables = ['Moderate_Demented']
 
     # Walk through the data directory
     for root, dirs, files in os.walk(directory):
@@ -41,8 +43,6 @@ def read_data_from_folder(directory,plot_class_dist = False):
                     X.append(flattened_image)
                     # Append the label to the labels list
                     y.append(label)
-
-
 
     # Convert the lists to numpy arrays
     X = np.array(X)
@@ -81,25 +81,39 @@ def plot_variance_explained(data):
     plt.yticks(np.arange(0, 101, step=5))  # Adjust y-axis ticks for better readability
     plt.show()
 
-# This method will compute how many dimensions we need to maintain a specific amount of total variance and will reduce to that number
-def reduce_dimensions_to_optimal_value(data, variance_threshold=0.90):
-    # Initialize PCA and fit it to the data
-    pca = PCA().fit(data)
-
-    # This will give us the cumulative variance explained by the principal components
-    cumulative_variance = np.cumsum(pca.explained_variance_ratio_)
-
-    # Find the number of components where the cumulative variance reaches the threshold
-    num_components = np.argmax(cumulative_variance >= variance_threshold) + 1 # + 1 because array counting starts at 0 but number of dimensions start i
-
-    pca = PCA(n_components=num_components)
-    pca = PCA().fit(data)
+# This method will apply PCA to reduce to a specified number of dimensions
+def apply_PCA(data,n_features):
+    print(data.shape)
+    pca = PCA(n_components=n_features).fit(data)
     data = pca.transform(data)
+    print(data.shape)
+
     return data
 
+def split_data(X, y, save_to_csv = False):
+    X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                        stratify=y, # we use stratify to ensure there is equel sampling from classes
+                                                        test_size=0.30)
+    if save_to_csv == True:
+        # Create dataframes
+        train_df = pd.DataFrame(X_train)
+        test_df = pd.DataFrame(X_test)
+        train_label_df = pd.DataFrame(y_train)
+        test_label_df = pd.DataFrame(y_test)
+
+        # Save to CSV files
+        train_df.to_csv('X_train.csv', index=False)
+        test_df.to_csv('X_test.csv', index=False)
+        train_label_df.to_csv('y_train.csv', index=False)
+        test_label_df.to_csv('y_test.csv', index=False)
+
+    return X_train, X_test, y_train, y_test
 
 X, y = read_data_from_folder(DATA_DIRECTORY,False)
 y = onehot_encode_labels(y)
+X = apply_PCA(X,100)
+X_train, X_test, y_train, y_test = split_data(X, y, True)
+
 
 
 
