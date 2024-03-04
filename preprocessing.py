@@ -111,7 +111,7 @@ def split_data(X, y, save_to_csv = False):
 
 X, y = read_data_from_folder(DATA_DIRECTORY,False)
 y = onehot_encode_labels(y)
-X = apply_PCA(X,100)
+X = apply_PCA(X,600)
 X_train, X_test, y_train, y_test = split_data(X, y, True)
 
 
